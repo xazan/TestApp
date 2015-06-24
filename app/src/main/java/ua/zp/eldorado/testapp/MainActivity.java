@@ -7,7 +7,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -32,12 +31,11 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
 
     public static final String LOG_TAG = "debugTest";
 //    public static final String PATH_TO_IMAGES = "/testapp";
-    public static final String PATH_TO_THUMBNAIL = Environment.getExternalStorageDirectory().getAbsolutePath() + "/temp/";
+//    public static final String PATH_TO_THUMBNAIL = Environment.getExternalStorageDirectory().getAbsolutePath() + "/temp/";
     public static final int THUMBNAIL_SIZE = 100;
-    GridViewAdapter mGridViewAdapter;
     public static Vector<String> mFilePath = new Vector<>();
     public static Vector<String> mFileThumbPath = new Vector<>();
-
+    GridViewAdapter mGridViewAdapter;
 
     @Override
     protected void onStart() {
@@ -66,7 +64,7 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        clearThumbsDirectory(PATH_TO_THUMBNAIL);
+//        clearThumbsDirectory(PATH_TO_THUMBNAIL);
     }
 
     @Override
@@ -111,7 +109,7 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Intent intent = new Intent(this, DetailActivity.class);
         intent.putExtra("image_index", Integer.toString(position));
-        mGridViewAdapter = new GridViewAdapter(this);
+//        mGridViewAdapter = new GridViewAdapter(this);
         startActivity(intent);
     }
 
@@ -127,38 +125,45 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
 
         @Override
         protected Void doInBackground(String... params) {
-            File workDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + params[0]);
+            File workDirectory = new File(params[0]);
+//            File workDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + params[0]);
             if (workDirectory.isDirectory()) {
-
                 final File[] files = workDirectory.listFiles();
                 int i = 0;
-
                 for (final File file : files) {
-
                     String fileName = file.getName().toString();
-                    String fileNameShort = fileName.substring(0, fileName.lastIndexOf("."));
-                    String fileExt = fileName.substring(fileName.lastIndexOf("."));
-                    String imageThumbFileName = PATH_TO_THUMBNAIL.concat(fileNameShort).concat("_tmb").concat(fileExt);
-                    File imageThumbFile = new File(imageThumbFileName);
-                    if (!imageThumbFile.exists()) {
-                        try {
-                            imageThumbFile.createNewFile();
-                            Bitmap bitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(file.getAbsolutePath().toString()), THUMBNAIL_SIZE, THUMBNAIL_SIZE, false);
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                            byte[] bitmapdata = baos.toByteArray();
-                            FileOutputStream fos = new FileOutputStream(imageThumbFile);
-                            fos.write(bitmapdata);
-                            fos.flush();
-                            fos.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                    int dotPosition = fileName.lastIndexOf(".");
+                    if (!file.isDirectory() && (dotPosition != -1)) {
+                    String fileNameShort = fileName.substring(0, dotPosition);
+                    String fileExt = fileName.substring(dotPosition);
+                    if((fileExt.equals(".png")) || (fileExt.equals(".jpg")) || (fileExt.equals(".bmp")) || (fileExt.equals(".gif"))) {
+                        String imageThumbFileName = fileNameShort.concat("_tmb").concat(fileExt);
+                        File imageThumbFile = new File(getBaseContext().getCacheDir() + "/" + imageThumbFileName);
+                        if (!imageThumbFile.exists()) {
+                            try {
+                                imageThumbFile.createNewFile();
+                                Log.d(LOG_TAG, file.getAbsolutePath());
+                                Bitmap bitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(file.getAbsolutePath().toString()), THUMBNAIL_SIZE, THUMBNAIL_SIZE, false);
+                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                                byte[] bitmapdata = baos.toByteArray();
+                                FileOutputStream fos = new FileOutputStream(imageThumbFile);
+                                fos.write(bitmapdata);
+                                fos.flush();
+                                fos.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
+                        mFilePath.add(file.getAbsolutePath().toString());
+                        mFileThumbPath.add(imageThumbFile.getAbsolutePath().toString());
+                        publishProgress();
+                        i++;
                     }
-                    mFilePath.add(file.getAbsolutePath().toString());
-                    mFileThumbPath.add(imageThumbFile.getAbsolutePath().toString());
-                    publishProgress();
-                    i++;
+
+                    }
+
+
                 }
             } else {
                 Log.d(LOG_TAG, "Wrong path to images: " + workDirectory.getAbsolutePath().toString());
