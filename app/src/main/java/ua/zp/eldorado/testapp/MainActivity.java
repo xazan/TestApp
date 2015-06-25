@@ -37,11 +37,6 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
     public static Vector<String> mFileThumbPath = new Vector<>();
     GridViewAdapter mGridViewAdapter;
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        updateGridView();
-    }
 
     private void updateGridView() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -55,22 +50,52 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
         super.onCreate(savedInstanceState);
         setContentView(R.layout.grid_layout);
 
+
         GridView gridView = (GridView) findViewById(R.id.gridview);
         mGridViewAdapter = new GridViewAdapter(this);
         gridView.setAdapter(mGridViewAdapter);
         gridView.setOnItemClickListener(this);
+
+        Log.d(LOG_TAG, "onCreate");
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-//        clearThumbsDirectory(PATH_TO_THUMBNAIL);
-    }
+    protected void onStart() {
+        super.onStart();
+        updateGridView();
+        Log.d(LOG_TAG, "onStart");    }
+
 
     @Override
     protected void onRestart() {
         super.onRestart();
         mGridViewAdapter = new GridViewAdapter(this);
+        Log.d(LOG_TAG, "onRestart");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(LOG_TAG, "onResume");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(LOG_TAG, "onPause");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(LOG_TAG, "onStop");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(LOG_TAG, "onDestroy");
+//        clearThumbsDirectory(PATH_TO_THUMBNAIL);
     }
 
     private void clearThumbsDirectory(String pathToThumbnail) {
@@ -128,8 +153,10 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
             File workDirectory = new File(params[0]);
 //            File workDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + params[0]);
             if (workDirectory.isDirectory()) {
+
                 final File[] files = workDirectory.listFiles();
                 int i = 0;
+
                 for (final File file : files) {
                     String fileName = file.getName().toString();
                     int dotPosition = fileName.lastIndexOf(".");
@@ -142,8 +169,8 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
                         if (!imageThumbFile.exists()) {
                             try {
                                 imageThumbFile.createNewFile();
-                                Log.d(LOG_TAG, file.getAbsolutePath());
-                                Bitmap bitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(file.getAbsolutePath().toString()), THUMBNAIL_SIZE, THUMBNAIL_SIZE, false);
+//                                Bitmap bitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(file.getAbsolutePath().toString()), THUMBNAIL_SIZE, THUMBNAIL_SIZE, false);
+                                Bitmap bitmap = Utils.decodeSampledBitmapFromResource(file.getAbsolutePath().toString(), THUMBNAIL_SIZE, THUMBNAIL_SIZE );
                                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
                                 byte[] bitmapdata = baos.toByteArray();
@@ -209,7 +236,6 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             ImageView image;
-
             convertView = LayoutInflater.from(mContext).inflate(R.layout.grid_item_layout, parent, false);
 
             image = (ImageView) convertView.findViewById(R.id.image);
