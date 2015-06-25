@@ -30,7 +30,7 @@ import java.util.Vector;
 public class MainActivity extends FragmentActivity implements AdapterView.OnItemClickListener {
 
     public static final String LOG_TAG = "debugTest";
-//    public static final String PATH_TO_IMAGES = "/testapp";
+    //    public static final String PATH_TO_IMAGES = "/testapp";
 //    public static final String PATH_TO_THUMBNAIL = Environment.getExternalStorageDirectory().getAbsolutePath() + "/temp/";
     public static final int THUMBNAIL_SIZE = 100;
     public static Vector<String> mFilePath = new Vector<>();
@@ -38,9 +38,14 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
     GridViewAdapter mGridViewAdapter;
 
 
+
+
     private void updateGridView() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         String pathToImages = preferences.getString(getString(R.string.prefs_image_dir_key), getString(R.string.prefs_image_dir_default));
+        mFilePath = new Vector<>();
+        mFileThumbPath = new Vector<>();
+        mGridViewAdapter = new GridViewAdapter(this);
         GetImagesFromExternalDataStorage getImagesFromExternalDataStorage = new GetImagesFromExternalDataStorage();
         getImagesFromExternalDataStorage.execute(pathToImages);
     }
@@ -49,52 +54,41 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.grid_layout);
-
-
         GridView gridView = (GridView) findViewById(R.id.gridview);
         mGridViewAdapter = new GridViewAdapter(this);
         gridView.setAdapter(mGridViewAdapter);
         gridView.setOnItemClickListener(this);
-
-        Log.d(LOG_TAG, "onCreate");
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        updateGridView();
-        Log.d(LOG_TAG, "onStart");    }
-
+    }
 
     @Override
     protected void onRestart() {
         super.onRestart();
-        mGridViewAdapter = new GridViewAdapter(this);
-        Log.d(LOG_TAG, "onRestart");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(LOG_TAG, "onResume");
+        updateGridView();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(LOG_TAG, "onPause");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        Log.d(LOG_TAG, "onStop");
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(LOG_TAG, "onDestroy");
 //        clearThumbsDirectory(PATH_TO_THUMBNAIL);
     }
 
@@ -161,32 +155,32 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
                     String fileName = file.getName().toString();
                     int dotPosition = fileName.lastIndexOf(".");
                     if (!file.isDirectory() && (dotPosition != -1)) {
-                    String fileNameShort = fileName.substring(0, dotPosition);
-                    String fileExt = fileName.substring(dotPosition);
-                    if((fileExt.equals(".png")) || (fileExt.equals(".jpg")) || (fileExt.equals(".bmp")) || (fileExt.equals(".gif"))) {
-                        String imageThumbFileName = fileNameShort.concat("_tmb").concat(fileExt);
-                        File imageThumbFile = new File(getBaseContext().getCacheDir() + "/" + imageThumbFileName);
-                        if (!imageThumbFile.exists()) {
-                            try {
-                                imageThumbFile.createNewFile();
+                        String fileNameShort = fileName.substring(0, dotPosition);
+                        String fileExt = fileName.substring(dotPosition);
+                        if ((fileExt.equals(".png")) || (fileExt.equals(".jpg")) || (fileExt.equals(".bmp")) || (fileExt.equals(".gif"))) {
+                            String imageThumbFileName = fileNameShort.concat("_tmb").concat(fileExt);
+                            File imageThumbFile = new File(getBaseContext().getCacheDir() + "/" + imageThumbFileName);
+                            if (!imageThumbFile.exists()) {
+                                try {
+                                    imageThumbFile.createNewFile();
 //                                Bitmap bitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeFile(file.getAbsolutePath().toString()), THUMBNAIL_SIZE, THUMBNAIL_SIZE, false);
-                                Bitmap bitmap = Utils.decodeSampledBitmapFromResource(file.getAbsolutePath().toString(), THUMBNAIL_SIZE, THUMBNAIL_SIZE );
-                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                                byte[] bitmapdata = baos.toByteArray();
-                                FileOutputStream fos = new FileOutputStream(imageThumbFile);
-                                fos.write(bitmapdata);
-                                fos.flush();
-                                fos.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                                    Bitmap bitmap = Utils.decodeSampledBitmapFromResource(file.getAbsolutePath().toString(), THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+                                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                                    byte[] bitmapdata = baos.toByteArray();
+                                    FileOutputStream fos = new FileOutputStream(imageThumbFile);
+                                    fos.write(bitmapdata);
+                                    fos.flush();
+                                    fos.close();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                             }
+                            mFilePath.add(file.getAbsolutePath().toString());
+                            mFileThumbPath.add(imageThumbFile.getAbsolutePath().toString());
+                            publishProgress();
+                            i++;
                         }
-                        mFilePath.add(file.getAbsolutePath().toString());
-                        mFileThumbPath.add(imageThumbFile.getAbsolutePath().toString());
-                        publishProgress();
-                        i++;
-                    }
 
                     }
 
@@ -242,8 +236,6 @@ public class MainActivity extends FragmentActivity implements AdapterView.OnItem
             image.setImageBitmap(BitmapFactory.decodeFile(mFileThumbPath.get(position)));
             return convertView;
         }
-
-
 
 
     }

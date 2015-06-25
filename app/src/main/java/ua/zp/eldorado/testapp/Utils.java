@@ -9,6 +9,7 @@ import java.io.File;
  * Created by xazan on 24.06.2015.
  */
 public class Utils {
+
     public static int calculateInSampleSize(
             BitmapFactory.Options options, int reqWidth, int reqHeight) {
         // Raw height and width of image
